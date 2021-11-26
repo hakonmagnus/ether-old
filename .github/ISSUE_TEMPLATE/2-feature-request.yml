@@ -1,0 +1,23 @@
+name: "Feature request"
+description: Create a feature request to help us improve Ether.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting a feature request.
+
+        This issue tracker is for requesting new features and functionality
+        for Ether. Please fill in as much of the form below as you are able
+        to.
+  - type: input
+    attributes:
+      label: Related problem
+      description: Is your feature request related to a problem? Please describe.
+  - type: input
+    attributes:
+      label: Proposed solution
+      description: Please describe the solution you would like for this feature.
+  - type: input
+    attributes:
+      label: Alternatives
+      description: Please describe any alternatives you have considered.

@@ -1,0 +1,34 @@
+name: "Bug report"
+description: Create a report to help us improve Ether.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue.
+
+        This issue tracker is for bugs and issues found within the Ether codebase.
+        Please fill in as much of the form below as you are able to.
+  - type: input
+    attributes:
+      label: Version
+      description: Version shown in the repository's README
+  - type: textarea
+    attributes:
+      label: Machine Info
+      description: Please specify the model of your CPU, Motherboard, RAM (Amount) and any other relevant machine-related information.
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: Enter details about your bug and what steps to perform to reproduce the bug.
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: What is the expected behavior?
+  - type: textarea
+    attributes:
+      label: Observed Behavior
+      description: What to you see instead?
+  - type: textarea
+    attributes:
+      label: Additional Information
+      description: Anything else relevant to the bug?
