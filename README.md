@@ -59,8 +59,11 @@ chmod +x build.sh
 To build Ether, run the following:
 
 ```
-./build.sh
+sudo ./build.sh
 ```
+
+Sudo privileges are required to mount the FAT EFI partition while building.
+We won't destroy your computer, don't worry.
 
 ### Installing
 
