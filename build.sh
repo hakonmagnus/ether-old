@@ -65,7 +65,7 @@ nasm ./efi/efi.asm -o ./build/boot.efi
 
 mkdir -p ./build/installer
 dd if=/dev/zero of=./build/installer/boot.catalog count=2048
-cp ./build/loader.bin ./build/installer/boot.bin
+nasm ./loader/loader-iso.asm -o ./build/installer/boot.bin
 dd if=/dev/zero of=./build/installer/efi.img count=4 bs=1M
 mkfs.vfat ./build/installer/efi.img
 
