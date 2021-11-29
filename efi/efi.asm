@@ -223,7 +223,16 @@ section .text follows=.header
 %define OFFSET_LOADED_IMAGE_IMAGE_DATA_TYPE     88
 %define OFFSET_LOADED_IMAGE_UNLOAD              96
 
+%define OFFSET_CONSOLE_RESET                    0
 %define OFFSET_CONSOLE_OUTPUT_STRING            8
+%define OFFSET_CONSOLE_TEST_STRING              16
+%define OFFSET_CONSOLE_QUERY_MODE               24
+%define OFFSET_CONSOLE_SET_MODE                 32
+%define OFFSET_CONSOLE_SET_ATTRIBUTE            40
+%define OFFSET_CONSOLE_CLEAR_SCREEN             48
+%define OFFSET_CONSOLE_SET_CURSOR_POSITION      56
+%define OFFSET_CONSOLE_ENABLE_CURSOR            64
+%define OFFSET_CONSOLE_MODE                     72
 
 %define OFFSET_DISK_IO2_CANCEL                  8
 %define OFFSET_DISK_IO2_READ                    16
@@ -238,6 +247,33 @@ section .text follows=.header
 %define EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER   0x00000008
 %define EFI_OPEN_PROTOCOL_BY_DRIVER             0x00000010
 %define EFI_OPEN_PROTOCOL_EXCLUSIVE             0x00000020
+
+%define EFI_BLACK                               0x00
+%define EFI_BLUE                                0x01
+%define EFI_GREEN                               0x02
+%define EFI_CYAN                                0x03
+%define EFI_RED                                 0x04
+%define EFI_MAGENTA                             0x05
+%define EFI_BROWN                               0x06
+%define EFI_LIGHTGRAY                           0x07
+%define EFI_BRIGHT                              0x08
+%define EFI_DARKGRAY                            0x08
+%define EFI_LIGHTBLUE                           0x09
+%define EFI_LIGHTGREEN                          0x0A
+%define EFI_LIGHTCYAN                           0x0B
+%define EFI_LIGHTRED                            0x0C
+%define EFI_LIGHTMAGENTA                        0x0D
+%define EFI_YELLOW                              0x0E
+%define EFI_WHITE                               0x0F
+
+%define EFI_BACKGROUND_BLACK                    0x00
+%define EFI_BACKGROUND_BLUE                     0x10
+%define EFI_BACKGROUND_GREEN                    0x20
+%define EFI_BACKGROUND_CYAN                     0x30
+%define EFI_BACKGROUND_RED                      0x40
+%define EFI_BACKGROUND_MAGENTA                  0x50
+%define EFI_BACKGROUND_BROWN                    0x60
+%define EFI_BACKGROUND_LIGHTGRAY                0x70
 
 ;=============================================================================;
 ; start                                                                       ;
@@ -263,10 +299,18 @@ start:
 
     mov qword rdx, [rcx + OFFSET_CONSOLE_OUTPUT_STRING]
     mov qword [console_out_output_string], rdx
-
-    mov qword rcx, [console_out]
-    lea qword rdx, [welcome_msg]
-    call [console_out_output_string]
+    mov qword rdx, [rcx + OFFSET_CONSOLE_CLEAR_SCREEN]
+    mov qword [console_out_clear_screen], rdx
+    mov qword rdx, [rcx + OFFSET_CONSOLE_QUERY_MODE]
+    mov qword [console_out_query_mode], rdx
+    mov qword rdx, [rcx + OFFSET_CONSOLE_SET_ATTRIBUTE]
+    mov qword [console_out_set_attribute], rdx
+    mov qword rdx, [rcx + OFFSET_CONSOLE_SET_CURSOR_POSITION]
+    mov qword [console_out_set_cursor_position], rdx
+    mov qword rdx, [rcx + OFFSET_CONSOLE_ENABLE_CURSOR]
+    mov qword [console_out_enable_cursor], rdx
+    mov qword rdx, [rcx + OFFSET_CONSOLE_MODE]
+    mov qword [console_mode], rdx
 
     mov qword rcx, [efi_handle]
     mov rdx, EFI_LOADED_IMAGE_PROTOCOL_GUID
@@ -283,6 +327,43 @@ start:
 
     cmp rax, EFI_SUCCESS
     jne fail
+
+    call console_init
+
+    mov qword [console_attribute], EFI_WHITE | EFI_BACKGROUND_BLUE
+    call console_set_attribute
+
+    mov rdx, 0x500
+    mov qword rcx, [console_columns]
+    xor rax, rax
+
+.loop1:
+    mov word [rdx], __utf16__ ` `
+
+    cmp rax, rcx
+    je .done1
+
+    inc rax
+    add rdx, 2
+    jmp .loop1
+
+.done1:
+    mov word [rdx], __utf16__ `\0`
+    mov rdx, 0x500
+    call console_print_string
+
+    mov qword rax, [console_columns]
+    xor rdx, rdx
+    mov rbx, 2
+    div rbx
+
+    sub rax, 17
+    mov qword [console_x], rax
+    mov qword [console_y], 0
+    call console_move_cursor
+
+    lea qword rdx, [welcome_msg]
+    call console_print_string
 
     mov qword rcx, [loaded_image]
     add rcx, OFFSET_LOADED_IMAGE_DEVICE_HANDLE
@@ -302,6 +383,7 @@ fail:
     hlt
 
 %include "./efi/disk.asm"
+%include "./efi/console.asm"
 
 times 4096 - ($-$$) db 0    ; Alignment
 
@@ -316,6 +398,12 @@ data_start:
 
     console_out                 dq 0        ; Console output
     console_out_output_string   dq 0        ; Output string
+    console_out_query_mode      dq 0        ; Query text mode
+    console_out_set_attribute   dq 0        ; Set output color
+    console_out_clear_screen    dq 0        ; Clear the screen
+    console_out_set_cursor_position dq 0    ; Set cursor position
+    console_out_enable_cursor   dq 0        ; Enable cursor
+    console_mode                dq 0        ; Current mode
 
     loaded_image                dq 0        ; Loaded image protocol
     device_path                 dq 0        ; Device path protocol
@@ -331,7 +419,8 @@ EFI_DEVICE_PATH_PROTOCOL_GUID:
     db 0x7E, 0x15, 0x62, 0xBC, 0x33, 0x3E, 0xEC, 0x4F
     db 0x99, 0x20, 0x2D, 0x3B, 0x36, 0xD7, 0x50, 0xDF
 
-    welcome_msg         db __utf16__ `Ether v1.0.0 Celeritas EFI Boot\r\n\0`
+    space               db __utf16__ `  \0`
+    welcome_msg         db __utf16__ `[ Ether v1.0.0 Celeritas EFI Boot ]\0`
     fail_msg            db __utf16__ `Fail\r\n\0`
 
 times 1024 - ($-$$) db 0    ; Alignment

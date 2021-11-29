@@ -12,6 +12,8 @@
 org 0x500
 bits 16
 
+%define MEMORY_MAP  0x8000
+
 ;=============================================================================;
 ; start                                                                       ;
 ;    - Legacy loader 16-bit entry point                                       ;
@@ -32,6 +34,18 @@ start:
     call a20_enable
     call gdt_install
 
+    xor eax, eax
+    xor ebx, ebx
+    call bios_get_memory_size
+
+    xor eax, eax
+    mov ds, ax
+    mov di, MEMORY_MAP
+    call bios_get_memory_map
+
+    mov word [memory_high], bx
+    mov word [memory_low], ax
+
     cli
     mov eax, cr0
     or eax, 1
@@ -39,6 +53,10 @@ start:
 
     jmp 0x8:loader32
 
+memory_high dw 0
+memory_low  dw 0
+
 %include "./loader/rm/a20.asm"
 %include "./loader/rm/gdt.asm"
+%include "./loader/rm/memory.asm"
 %include "./loader/loader32.asm"
