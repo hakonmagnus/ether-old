@@ -57,7 +57,9 @@ mkdir -p build
 
 # Assemble
 
+nasm ./mbr/iso.asm -o ./build/installer/iso.mbr
 nasm ./loader/loader.asm -o ./build/loader.bin
+nasm ./efi/efi.asm -o ./build/boot.efi
 
 # Create installer ISO
 
@@ -67,7 +69,7 @@ cp ./build/loader.bin ./build/installer/boot.bin
 dd if=/dev/zero of=./build/installer/efi.img count=4 bs=1M
 mkfs.vfat ./build/installer/efi.img
 
-nasm ./installer/efi.asm -o ./build/installer/boot.efi
+cp ./build/boot.efi ./build/installer/boot.efi
 
 sudo mkdir -p /mnt/etheriso
 sudo mount ./build/installer/efi.img /mnt/etheriso
@@ -78,6 +80,7 @@ sudo umount /mnt/etheriso
 
 xorriso -as mkisofs \
     -o ether-1.0.0-celeritas.iso \
+    -isohybrid-mbr ./build/installer/iso.mbr \
     -b boot.bin \
      -no-emul-boot -boot-load-size 1 \
     -c boot.catalog \
@@ -86,3 +89,4 @@ xorriso -as mkisofs \
      -no-emul-boot \
      -isohybrid-gpt-basdat \
     ./build/installer
+#xorriso -dev ./ether-1.0.0-celeritas.iso -volid 'Ether 1.0 Celeritas' -commit
