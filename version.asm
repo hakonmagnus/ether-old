@@ -9,46 +9,10 @@
 ;  (_______/   )_(   |/     \|(_______/|/   \__/                              |
 ;=============================================================================|
 
-org 0x7C00
-bits 16
+%define ETHER_VERSION_MAJOR         1
+%define ETHER_VERSION_MINOR         0
+%define ETHER_VERSION_PATCH         0
+%define ETHER_VERSION_STRING        "v1.0.0"
+%define ETHER_VERSION_CODENAME      "Celeritas"
 
-start:
-    cli
-
-    mov ax, 0
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov sp, 0xFFFF
-
-    sti
-
-    mov si, message
-    call print_string
-    
-    xor ax, ax
-    int 0x16
-    xor ax, ax
-    int 0x19
-
-print_string:
-    pusha
-    mov ah, 0x0E
-
-.loop:
-    lodsb
-    test al, al
-    jz .done
-    int 0x10
-    jmp .loop
-
-.done:
-    popa
-    ret
-
-message db "Cannot boot from MBR. Please check your media installation.", 13, 10, 0
-
-times 510 - ($-$$) db 0
-dw 0xAA55
+%define ETHER_BUILD_UNIT_TESTS      ; Comment this out for production builds

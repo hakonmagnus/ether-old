@@ -12,6 +12,8 @@
 org 0x100000
 bits 64
 
+%include "./version.asm"
+
 %define EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION         10
 %define EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER 11
 %define EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER      12
@@ -420,7 +422,7 @@ EFI_DEVICE_PATH_PROTOCOL_GUID:
     db 0x99, 0x20, 0x2D, 0x3B, 0x36, 0xD7, 0x50, 0xDF
 
     space               db __utf16__ `  \0`
-    welcome_msg         db __utf16__ `[ Ether v1.0.0 Celeritas EFI Boot ]\0`
+    welcome_msg         db __utf16__ `[ Ether `, __utf16__ ETHER_VERSION_STRING, __utf16__ `v1.0.0 Celeritas EFI Boot ]\0`
     fail_msg            db __utf16__ `Fail\r\n\0`
 
 times 1024 - ($-$$) db 0    ; Alignment

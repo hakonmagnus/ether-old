@@ -54,16 +54,31 @@ fi
 # Create build directory
 
 mkdir -p build
+mkdir -p ./build/installer
+
+# CMake
+
+cd build
+cmake ..
+make
+cd ..
 
 # Assemble
 
+echo -e "\e[1;32mBuilding loaders...\e[0m"
 nasm ./mbr/iso.asm -o ./build/installer/iso.mbr
+nasm ./mbr/main.asm -o ./build/main.mbr
 nasm ./loader/loader.asm -o ./build/loader.bin
 nasm ./efi/efi.asm -o ./build/boot.efi
 
+# Create hard drive image
+
+./build/util/diskutil/diskutil
+
 # Create installer ISO
 
-mkdir -p ./build/installer
+echo -e "\e[1;32mBuilding installer...\e[0m"
+
 mkdir -p ./build/installer/boot
 dd if=/dev/zero of=./build/installer/boot.catalog count=2048
 nasm ./isoloader/isoloader.asm -o ./build/installer/boot.bin
@@ -72,6 +87,8 @@ mkfs.vfat ./build/installer/efi.img
 
 cp ./build/boot.efi ./build/installer/boot.efi
 cp ./build/loader.bin ./build/installer/boot/loader.bin
+
+echo -e "\e[1;32mWriting installer ISO...\e[0m"
 
 sudo mkdir -p /mnt/etheriso
 sudo mount ./build/installer/efi.img /mnt/etheriso
@@ -92,3 +109,5 @@ xorriso -as mkisofs \
      -isohybrid-gpt-basdat \
     ./build/installer
 #xorriso -dev ./ether-1.0.0-celeritas.iso -volid 'Ether 1.0 Celeritas' -commit
+
+echo -e "\e[1;32mDone!\e[0m"

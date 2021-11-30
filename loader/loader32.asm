@@ -144,7 +144,7 @@ loader32:
 
     jmp $
 
-welcome_text db "                           [ Ether OS Loader v1.0.0 ]                           ", 13, 10, 13, 10, 0
+welcome_text db "                           [ Ether OS Loader ", ETHER_VERSION_STRING, " ]                           ", 13, 10, 13, 10, 0
 idt_text db "Initialized interrupt vectors", 13, 10, 0
 memory_size_text db "Installed memory in KiB: ", 0
 memory_map_text db "Physical memory map:", 13, 10, 0

@@ -67,8 +67,16 @@ We won't destroy your computer, don't worry.
 
 ### Installing
 
-The build utility will generate a hard drive image which you can run through
-a virtual machine or burn to a hard drive.
+The build utility will generate both an ISO image for the installer and a
+raw hard drive image which can be executed by any virtual machine. The following
+run scripts exist:
+
+* qemu-iso.sh - Runs QEMU under legacy BIOS from the ISO image
+* qemu-iso-uefi.sh - Runs QEMU using OVMF UEFI BIOS from the ISO image
+* qemu.sh - Runs QEMU under legacy BIOS using the hard drive image
+* qemu-uefi.sh - Runs QEMU using OVMF UEFI BIOS using the hard drive image
+
+**Note: You should run this under sudo since it uses KVM by default**
 
 ## Contributing
 
