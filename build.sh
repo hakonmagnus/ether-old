@@ -68,10 +68,21 @@ cd ..
 echo -e "\e[1;32mBuilding loaders...\e[0m"
 nasm ./mbr/iso.asm -o ./build/installer/iso.mbr
 nasm ./mbr/main.asm -o ./build/main.mbr
+nasm ./mbr/fat12.asm -o ./build/fat12.mbr
 nasm ./loader/loader.asm -o ./build/loader.bin
 nasm ./efi/efi.asm -o ./build/boot.efi
 
 # Create hard drive image
+
+dd if=/dev/zero of=./build/esp.img count=2 bs=1M
+mkfs.vfat ./build/esp.img
+
+sudo mkdir -p /mnt/etheresp
+sudo mount ./build/esp.img /mnt/etheresp
+sudo mkdir /mnt/etheresp/EFI
+sudo mkdir /mnt/etheresp/EFI/BOOT
+sudo cp ./build/boot.efi /mnt/etheresp/EFI/BOOT/BOOTX64.EFI
+sudo umount /mnt/etheresp
 
 ./build/util/diskutil/diskutil
 

@@ -21,10 +21,11 @@
 
 #define BIOS_PARTITION_BLOCKS       64
 #define EBFS_PARTITION_BLOCKS       256
-#define EFI_PARTITION_BLOCKS        1000
 
-Image::Image(const size_t size, const std::string& mbr)
-    : m_size{ size }, m_image{ nullptr }, m_mbr{ mbr }
+Image::Image(const size_t size, const std::string& mbr, const std::string& fat12bs,
+        const std::string& espImage)
+    : m_size{ size }, m_image{ nullptr }, m_mbr{ mbr }, m_fat12bs{ fat12bs },
+    m_espImage{ espImage }
 {
     if (m_size < (68 + BIOS_PARTITION_BLOCKS + EBFS_PARTITION_BLOCKS) * 0x200)
         m_size = (68 + BIOS_PARTITION_BLOCKS + EBFS_PARTITION_BLOCKS) * 0x200;
@@ -42,6 +43,16 @@ Image::~Image()
 bool Image::write(const std::string& path)
 {
     uint32_t dword = 0;
+
+    auto espfile = std::fstream(m_espImage, std::ios::in | std::ios::ate | std::ios::binary);
+    auto espsize = espfile.tellg();
+    espfile.seekg(0, std::ios::beg);
+    uint8_t* esp = new uint8_t[espsize];
+    espfile.read((char*)esp, espsize);
+    espfile.close();
+
+    memcpy(&m_image[((m_size / 0x200) - (espsize / 0x200) - 35) * 0x200],
+            esp, espsize);
 
     char* entries = new char[0x80 * 4];
     memset(entries, 0, 0x80 * 4);
@@ -69,7 +80,7 @@ bool Image::write(const std::string& path)
     memcpy(mainEntry.typeGUID, EtherFSPartitionGUID, 16);
     generateGUID(mainEntry.uniqueGUID);
     mainEntry.firstLBA = ebfsEntry.lastLBA + 1;
-    mainEntry.lastLBA = (m_size / 0x200) - EFI_PARTITION_BLOCKS - 36;
+    mainEntry.lastLBA = (m_size / 0x200) - (espsize / 0x200) - 36;
     memcpy(mainEntry.partitionName, u"Ether Operating System", 22 * sizeof(char16_t));
     memcpy(&entries[0x100], (char*)&mainEntry, 0x80);
 
@@ -77,7 +88,7 @@ bool Image::write(const std::string& path)
     memset(&efiEntry, 0, sizeof(efiEntry));
     memcpy(efiEntry.typeGUID, EFIPartitionGUID, 16);
     generateGUID(efiEntry.uniqueGUID);
-    efiEntry.firstLBA = (m_size / 0x200) - EFI_PARTITION_BLOCKS - 35;
+    efiEntry.firstLBA = (m_size / 0x200) - (espsize / 0x200) - 35;
     efiEntry.lastLBA = (m_size / 0x200) - 35;
     memcpy(efiEntry.partitionName, u"EFI System Partition", 20 * sizeof(char16_t));
     memcpy(&entries[0x180], (char*)&efiEntry, 0x80);
@@ -103,11 +114,14 @@ bool Image::write(const std::string& path)
     gpt.numEntries = 4;
     gpt.entrySize = 0x80;
     gpt.entriesCRC32 = crc32(0, entries, 0x80 * 4);
+    gpt.headerCRC32 = crc32(0, &gpt, sizeof(gpt));
     memcpy(&m_image[0x200], (char*)&gpt, sizeof(gpt));
 
     gpt.currentLBA = (m_size / 0x200) - 1;
     gpt.backupLBA = 1;
     gpt.entriesLBA = (m_size / 0x200) - 34;
+    gpt.headerCRC32 = 0;
+    gpt.headerCRC32 = crc32(0, &gpt, sizeof(gpt));
     memcpy(&m_image[m_size - 0x200], (char*)&gpt, sizeof(gpt));
 
     auto mbrfile = std::fstream(m_mbr, std::ios::in | std::ios::ate | std::ios::binary);

@@ -34,7 +34,7 @@ public:
      * \param size Size of image in bytes
      * \param mbr MBR filename
      */
-    Image(const size_t size, const std::string& mbr);
+    Image(const size_t size, const std::string& mbr, const std::string& fat12bs, const std::string& espImage);
 
     /**
      * Destructor
@@ -63,6 +63,16 @@ private:
      * MBR filename
      */
     std::string m_mbr;
+
+    /**
+     * FAT12 boot sector filename
+     */
+    std::string m_fat12bs;
+
+    /**
+     * EFI system partition image path
+     */
+    std::string m_espImage;
 };
 
 /**
