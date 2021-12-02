@@ -12,16 +12,38 @@
 bits 32
 
 ;=============================================================================;
+; ata_lba_read_c                                                              ;
+;    - Read multiple sectors using ATA PIO mode                               ;
+;    @param EAX = LBA address                                                 ;
+;    @param ECX = Sector count                                                ;
+;    @param EDI = Buffer address                                              ;
+;=============================================================================;
+ata_lba_read_c:
+    pusha
+    dec ecx
+    
+.loop:
+    call ata_lba_read
+    inc eax
+    add edi, 0x200
+    loop .loop
+    
+    popa
+    ret
+
+;=============================================================================;
 ; ata_lba_read                                                                ;
 ;    - Read from disk using ATA PIO mode                                      ;
 ;    @param EAX = LBA address                                                 ;
-;    @param CL = Number of sectors to read                                    ;
 ;    @param EDI = Buffer address                                              ;
 ;=============================================================================;
 ata_lba_read:
+    pushf
     pusha
     
+    and eax, 0x0FFFFFFF
     mov ebx, eax
+    mov ecx, 1
     
     mov edx, 0x1F6
     shr eax, 24
@@ -56,26 +78,28 @@ ata_lba_read:
     jz .loop
     
     mov eax, 256
-    xor bx, bx
-    mov bl, cl
-    mul bx
-    mov ecx, eax
+    ;xor bx, bx
+    ;mov bl, cl
+    ;mul bx
+    mov ecx, 256
     mov edx, 0x1F0
     rep insw
     
     popa
+    popf
     ret
 
 ;=============================================================================;
 ; ata_lba_write                                                               ;
 ;    - Write to disk using ATA PIO mode                                       ;
 ;    @param EAX = LBA address                                                 ;
-;    @param CL = Number of sectors to read                                    ;
 ;    @param EDI = Buffer address                                              ;
 ;=============================================================================;
 ata_lba_write:
+    pushf
     pusha
     and eax, 0x0FFFFFFF
+    mov ecx, 1
     
     mov edx, 0x1F6
     shr eax, 24
@@ -110,13 +134,14 @@ ata_lba_write:
     jz .loop
     
     mov eax, 256
-    xor bx, bx
-    mov bl, cl
-    mul bx
-    mov ecx, eax
+    ;xor bx, bx
+    ;mov bl, cl
+    ;mul bx
+    mov ecx, 256
     mov edx, 0x1F0
     mov esi, edi
     rep outsw
     
     popa
+    popf
     ret

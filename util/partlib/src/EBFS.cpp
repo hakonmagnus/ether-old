@@ -133,7 +133,14 @@ uint8_t* EBFS::write()
     uint32_t rootDirectory = 0;
     uint32_t nextInode = 0;
     
-    std::cout << nextGroup << std::endl;
+    for (int i = 0; i < tree.size(); ++i)
+    {
+        if (!tree[i]->isDir)
+            continue;
+        
+        tree[i]->inode = nextInode++;
+    }
+    --nextInode;
     
     for (int i = 0; i < tree.size(); ++i)
     {
@@ -141,10 +148,13 @@ uint8_t* EBFS::write()
             continue;
         
         if (tree[i]->isRoot)
+        {
             rootDirectory = nextGroup;
+            tree[i]->inode = 0;
+        }
         
-        uint32_t dinodeGroup = bitmapGroups + (sizeof(EBFSInode) * nextInode) / (m_blockSize * m_groupSize - 16);
-        uint32_t dinodeOffset = (sizeof(EBFSInode) * nextInode) % (m_blockSize * m_groupSize - 16) + 16;
+        uint32_t dinodeGroup = bitmapGroups + (sizeof(EBFSInode) * tree[i]->inode) / (m_blockSize * m_groupSize - 16);
+        uint32_t dinodeOffset = (sizeof(EBFSInode) * tree[i]->inode) % (m_blockSize * m_groupSize - 16) + 16;
         
         EBFSInode dinode;
         memset(&dinode, 0, sizeof(dinode));
@@ -155,14 +165,38 @@ uint8_t* EBFS::write()
         dinode.modifiedTime = time;
         dinode.firstGroup = nextGroup;
         memcpy(&m_image[(dinodeGroup * m_groupSize * m_blockSize) + dinodeOffset], &dinode, sizeof(dinode));
-        ++nextInode;
         
         uint32_t offset = 16;
+        
+        EBFSDirectoryEntry dot;
+        memset(&dot, 0, sizeof(dot));
+        dot.inode = tree[i]->inode;
+        dot.type = 2;
+        dot.entrySize = sizeof(EBFSDirectoryEntry) + 2;
+        memcpy(&m_image[nextGroup * m_groupSize * m_blockSize + offset], &dot, sizeof(dot));
+        memcpy(&m_image[nextGroup * m_groupSize * m_blockSize + offset + sizeof(dot)],
+            ".", 2);
+        offset += sizeof(dot) + 2;
+        
+        EBFSDirectoryEntry dotdot;
+        memset(&dotdot, 0, sizeof(dotdot));
+        if (tree[i]->isRoot)
+            dotdot.inode = 0;
+        else
+            dotdot.inode = tree[i]->parent->inode;
+        dotdot.type = 2;
+        dotdot.entrySize = sizeof(EBFSDirectoryEntry) + 3;
+        memcpy(&m_image[nextGroup * m_groupSize * m_blockSize + offset], &dotdot, sizeof(dotdot));
+        memcpy(&m_image[nextGroup * m_groupSize * m_blockSize + offset + sizeof(dotdot)],
+            "..", 3);
+        offset += sizeof(dotdot) + 3;
         
         for (int j = 0; j < tree[i]->children.size(); ++j)
         {
             EBFSDirectoryInfo* child = tree[i]->children[j];
-            child->inode = nextInode;
+            
+            if (!child->isDir)
+                child->inode = nextInode;
             
             if (offset >= m_blockSize * m_groupSize)
             {
@@ -327,6 +361,8 @@ uint8_t* EBFS::write()
     super.inodeSize = sizeof(EBFSInode);
     super.lastMountTime = time;
     super.lastWriteTime = time;
+    super.rootDirectory = rootDirectory;
+    super.inodes = bitmapGroups;
     
     memcpy(&m_image[m_blockSize], &super, sizeof(super));
     

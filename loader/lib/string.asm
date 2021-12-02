@@ -88,3 +88,36 @@ int_to_hex:
     ret
 
     .t times 9 db 0
+
+;=============================================================================;
+; string_compare                                                              ;
+;    - Compare two strings                                                    ;
+;    @param ESI = String one                                                  ;
+;    @param EDI = String two                                                  ;
+;    @return CF = Set on equal                                                ;
+;=============================================================================;
+string_compare:
+    pusha
+    
+.loop:
+    mov byte al, [esi]
+    mov byte bl, [edi]
+    
+    cmp al, bl
+    jne .notfound
+    
+    inc esi
+    inc edi
+    
+    cmp al, 0
+    jne .loop
+    
+.found:
+    stc
+    popa
+    ret
+    
+.notfound:
+    clc
+    popa
+    ret

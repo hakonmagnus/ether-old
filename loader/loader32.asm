@@ -11,6 +11,7 @@
 
 bits 32
 
+%define ELF_IMAGE 0x1000000
 %define KERNEL_ADDRESS 0x100000
 
 ;=============================================================================;
@@ -152,15 +153,28 @@ loader32:
     lea dword esi, [ata_lba_write]
     mov dword [disk_write_sector], esi
     
+    lea dword esi, [ata_lba_read_c]
+    mov dword [disk_read_sectors], esi
+    
     call ebfs_init
     
     test eax, eax
     jnz ebfs_error
     
+    ; Load the kernel
+    
     lea dword esi, [ebfs_text]
     call vga_text_print_string
     
-    jmp $
+    lea dword edi, [ether_path]
+    call ebfs_cd
+    
+    lea dword esi, [ether_path] ; Same filename
+    mov edi, ELF_IMAGE
+    call ebfs_read_file
+    
+    mov edi, ELF_IMAGE
+    jmp elf_execute
 
 ebfs_error:
     mov esi, .msg
@@ -178,13 +192,19 @@ region_length_text db 9, "Region length: ", 0
 region_type_text db 9, "Region type: ", 0
 atapio_text db "Using ATA PIO mode", 13, 10, 0
 ebfs_text db "Initialized EBFS", 13, 10, 0
+ether_path db "ether", 0
 
 disk_read_sector dd 0
 disk_write_sector dd 0
+disk_read_sectors dd 0
 
 %include "./loader/lib/string.asm"
 %include "./loader/cpu/idt.asm"
+%include "./loader/memory/mm.asm"
 %include "./loader/apic/pic.asm"
 %include "./loader/video/vgatext.asm"
 %include "./loader/disk/atapio.asm"
 %include "./loader/fs/ebfs.asm"
+%include "./loader/fs/elf.asm"
+
+loader_end:
