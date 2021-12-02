@@ -10,13 +10,19 @@
 ;=============================================================================|
 
 section .multiboot
-multiboot_header:
-    dd 0xE85250D6
-    dd 0
-    dd multiboot_header_end - multiboot_header
-    dd 0x100000000 - (0xE85250D6 + 0 + (multiboot_header_end - multiboot_header))
+align 4
+header_start:
+dd 0xE85250D6
+dd 0
+dd header_start - header_end
+dd 0x100000000 - 0xE85250D6 - (header_start - header_end)
 
-    dw 0
-    dw 0
-    dd 8
-multiboot_header_end:
+dw 0
+dw 0
+dw 0
+header_end:
+
+section .data
+global multiboot_info
+
+multiboot_info dd 0

@@ -73,7 +73,19 @@ nasm ./loader/loader.asm -o ./build/loader.bin
 nasm ./efi/efi.asm -o ./build/boot.efi
 
 echo -e "\e[1;32mBuilding kernel...\e[0m"
-nasm ./ether/ether.asm -o ./build/ether
+mkdir -p ./build/ether
+mkdir -p ./build/ether/cpu
+mkdir -p ./build/ether/video
+nasm -felf64 ./ether/multiboot.asm -o ./build/ether/multiboot.o
+nasm -felf64 ./ether/entry.asm -o ./build/ether/entry.o
+nasm -felf64 ./ether/ether.asm -o ./build/ether/ether.o
+nasm -felf64 ./ether/cpu/gdt.asm -o ./build/ether/cpu/gdt.o
+nasm -felf64 ./ether/cpu/idt.asm -o ./build/ether/cpu/idt.o
+nasm -felf64 ./ether/cpu/sse.asm -o ./build/ether/cpu/sse.o
+nasm -felf64 ./ether/video/vgatext.asm -o ./build/ether/video/vgatext.o
+ld -T ./ether/link.ld -o ./build/etherimage ./build/ether/multiboot.o ./build/ether/entry.o \
+    ./build/ether/cpu/gdt.o ./build/ether/ether.o ./build/ether/video/vgatext.o ./build/ether/cpu/idt.o \
+    ./build/ether/cpu/sse.o
 
 # Create hard drive image
 
@@ -89,7 +101,7 @@ mkfs.vfat ./build/esp.img
 
 mkdir -p ./build/boot
 mkdir -p ./build/boot/ether
-cp ./build/ether ./build/boot/ether/ether
+cp ./build/etherimage ./build/boot/ether/ether
 
 ./build/util/diskutil/diskutil
 

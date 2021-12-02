@@ -183,6 +183,9 @@ elf_execute:
     jmp .next_segment
 
 .done:
+    mov byte al, [0x104004]
+    call vga_text_put_char
+    
     cli
     mov eax, 0x36D76289
     lidt [idt_old]
