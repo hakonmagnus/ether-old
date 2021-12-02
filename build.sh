@@ -71,18 +71,23 @@ nasm ./mbr/main.asm -o ./build/main.mbr
 nasm ./mbr/fat12.asm -o ./build/fat12.mbr
 nasm ./loader/loader.asm -o ./build/loader.bin
 nasm ./efi/efi.asm -o ./build/boot.efi
+nasm ./ether/ether.asm -o ./build/ether
 
 # Create hard drive image
 
 dd if=/dev/zero of=./build/esp.img count=2 bs=1M
 mkfs.vfat ./build/esp.img
 
-sudo mkdir -p /mnt/etheresp
-sudo mount ./build/esp.img /mnt/etheresp
-sudo mkdir /mnt/etheresp/EFI
-sudo mkdir /mnt/etheresp/EFI/BOOT
-sudo cp ./build/boot.efi /mnt/etheresp/EFI/BOOT/BOOTX64.EFI
-sudo umount /mnt/etheresp
+#sudo mkdir -p /mnt/cetheresp
+#sudo mount ./build/esp.img /mnt/etheresp
+#sudo mkdir /mnt/etheresp/EFI
+#sudo mkdir /mnt/etheresp/EFI/BOOT
+#sudo cp ./build/boot.efi /mnt/etheresp/EFI/BOOT/BOOTX64.EFI
+#sudo umount /mnt/etheresp
+
+mkdir -p ./build/boot
+mkdir -p ./build/boot/ether
+cp ./build/ether ./build/boot/ether/ether
 
 ./build/util/diskutil/diskutil
 
@@ -101,12 +106,12 @@ cp ./build/loader.bin ./build/installer/boot/loader.bin
 
 echo -e "\e[1;32mWriting installer ISO...\e[0m"
 
-sudo mkdir -p /mnt/etheriso
-sudo mount ./build/installer/efi.img /mnt/etheriso
-sudo mkdir /mnt/etheriso/EFI
-sudo mkdir /mnt/etheriso/EFI/BOOT
-sudo cp ./build/installer/boot.efi /mnt/etheriso/EFI/BOOT/BOOTX64.EFI
-sudo umount /mnt/etheriso
+#sudo mkdir -p /mnt/etheriso
+#sudo mount ./build/installer/efi.img /mnt/etheriso
+#sudo mkdir /mnt/etheriso/EFI
+#sudo mkdir /mnt/etheriso/EFI/BOOT
+#sudo cp ./build/installer/boot.efi /mnt/etheriso/EFI/BOOT/BOOTX64.EFI
+#sudo umount /mnt/etheriso
 
 xorriso -as mkisofs \
     -o ether-1.0.0-celeritas.iso \

@@ -11,6 +11,8 @@
 
 bits 32
 
+%define KERNEL_ADDRESS 0x100000
+
 ;=============================================================================;
 ; loader32                                                                    ;
 ;    - Loader 32-bit entry point                                              ;
@@ -141,8 +143,31 @@ loader32:
     jne .loop
 
 .done1:
-
+    lea dword esi, [atapio_text]
+    call vga_text_print_string
+    
+    lea dword esi, [ata_lba_read]
+    mov dword [disk_read_sector], esi
+    
+    lea dword esi, [ata_lba_write]
+    mov dword [disk_write_sector], esi
+    
+    call ebfs_init
+    
+    test eax, eax
+    jnz ebfs_error
+    
+    lea dword esi, [ebfs_text]
+    call vga_text_print_string
+    
     jmp $
+
+ebfs_error:
+    mov esi, .msg
+    call vga_text_print_string
+    jmp $
+    
+    .msg db "EBFS file system error.", 13, 10, 0
 
 welcome_text db "                           [ Ether OS Loader ", ETHER_VERSION_STRING, " ]                           ", 13, 10, 13, 10, 0
 idt_text db "Initialized interrupt vectors", 13, 10, 0
@@ -151,8 +176,15 @@ memory_map_text db "Physical memory map:", 13, 10, 0
 region_start_text db "Region start: ", 0
 region_length_text db 9, "Region length: ", 0
 region_type_text db 9, "Region type: ", 0
+atapio_text db "Using ATA PIO mode", 13, 10, 0
+ebfs_text db "Initialized EBFS", 13, 10, 0
+
+disk_read_sector dd 0
+disk_write_sector dd 0
 
 %include "./loader/lib/string.asm"
 %include "./loader/cpu/idt.asm"
 %include "./loader/apic/pic.asm"
 %include "./loader/video/vgatext.asm"
+%include "./loader/disk/atapio.asm"
+%include "./loader/fs/ebfs.asm"

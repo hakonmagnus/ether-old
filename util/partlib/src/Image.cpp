@@ -13,6 +13,7 @@
 #include "partlib/GPT.hpp"
 #include "partlib/GUID.hpp"
 #include "partlib/CRC32.hpp"
+#include "partlib/EBFS.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -23,9 +24,10 @@
 #define EBFS_PARTITION_BLOCKS       256
 
 Image::Image(const size_t size, const std::string& mbr, const std::string& fat12bs,
-        const std::string& espImage)
+        const std::string& espImage, const std::string& loader,
+        const std::string& boot)
     : m_size{ size }, m_image{ nullptr }, m_mbr{ mbr }, m_fat12bs{ fat12bs },
-    m_espImage{ espImage }
+    m_espImage{ espImage }, m_loader{ loader }, m_boot{ boot }
 {
     if (m_size < (68 + BIOS_PARTITION_BLOCKS + EBFS_PARTITION_BLOCKS) * 0x200)
         m_size = (68 + BIOS_PARTITION_BLOCKS + EBFS_PARTITION_BLOCKS) * 0x200;
@@ -43,6 +45,12 @@ Image::~Image()
 bool Image::write(const std::string& path)
 {
     uint32_t dword = 0;
+    
+    auto loaderfile = std::fstream(m_loader, std::ios::in | std::ios::ate | std::ios::binary);
+    auto loadersize = loaderfile.tellg();
+    loaderfile.seekg(0, std::ios::beg);
+    loaderfile.read((char*)&m_image[0x200 * 34], loadersize);
+    loaderfile.close();
 
     auto espfile = std::fstream(m_espImage, std::ios::in | std::ios::ate | std::ios::binary);
     auto espsize = espfile.tellg();
@@ -53,6 +61,15 @@ bool Image::write(const std::string& path)
 
     memcpy(&m_image[((m_size / 0x200) - (espsize / 0x200) - 35) * 0x200],
             esp, espsize);
+    
+    EBFS* ebfs = new EBFS(EBFS_PARTITION_BLOCKS * 0x200, 0x200, 8,
+        512, m_boot);
+    
+    memcpy(&m_image[(34 + BIOS_PARTITION_BLOCKS) * 0x200], ebfs->write(),
+        EBFS_PARTITION_BLOCKS * 0x200);
+    
+    delete ebfs;
+    ebfs = nullptr;
 
     char* entries = new char[0x80 * 4];
     memset(entries, 0, 0x80 * 4);
@@ -62,7 +79,7 @@ bool Image::write(const std::string& path)
     memcpy(biosEntry.typeGUID, biosPartitionGUID, 16);
     generateGUID(biosEntry.uniqueGUID);
     biosEntry.firstLBA = 34;
-    biosEntry.lastLBA = 34 + (BIOS_PARTITION_BLOCKS * 0x200) - 1;
+    biosEntry.lastLBA = 34 + BIOS_PARTITION_BLOCKS - 1;
     memcpy(biosEntry.partitionName, u"Ether Loader", 12 * sizeof(char16_t));
     memcpy(&entries[0], (char*)&biosEntry, 0x80);
 
@@ -70,7 +87,7 @@ bool Image::write(const std::string& path)
     memset(&ebfsEntry, 0, sizeof(ebfsEntry));
     memcpy(ebfsEntry.typeGUID, ebfsPartitionGUID, 16);
     generateGUID(ebfsEntry.uniqueGUID);
-    ebfsEntry.firstLBA = 34 + (BIOS_PARTITION_BLOCKS * 0x200);
+    ebfsEntry.firstLBA = 34 + BIOS_PARTITION_BLOCKS;
     ebfsEntry.lastLBA = ebfsEntry.firstLBA + (EBFS_PARTITION_BLOCKS * 0x200) - 1;
     memcpy(ebfsEntry.partitionName, u"Ether Boot Partition", 20 * sizeof(char16_t));
     memcpy(&entries[0x80], (char*)&ebfsEntry, 0x80);

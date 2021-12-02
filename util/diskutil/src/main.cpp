@@ -21,6 +21,8 @@ int main(int argc, char** argv)
     std::string mbr{ "./build/main.mbr" };
     std::string fat12bs{ "./build/fat12.mbr" };
     std::string espImage{ "./build/esp.img" };
+    std::string loader{ "./build/loader.bin" };
+    std::string ebfs{ "./build/boot" };
     size_t size{ 0x10000000 };
 
     srand(time(nullptr));
@@ -42,6 +44,8 @@ int main(int argc, char** argv)
                 << "  (-mbr|--mbr) Specify the master boot record filename\n"
                 << "  (-fb|--fat-boot-sector) Specify the boot sector to use with FAT12\n"
                 << "  (-esp|--esp-image) Path to the EFI system partition image\n"
+                << "  (-l|--loader) Path to OS loader\n"
+                << "  (-b|--boot) Path to boot directory\n"
                 << "\n";
             return 0;
         }
@@ -61,6 +65,14 @@ int main(int argc, char** argv)
         {
             espImage = argv[++i];
         }
+        else if (arg == "-l" || arg == "--loader")
+        {
+            loader = argv[++i];
+        }
+        else if (arg == "-b" || arg == "--boot")
+        {
+            ebfs = argv[++i];
+        }
         else
         {
             std::cout << "\033[1;31mUnsupported argument " << arg << "\033[0m\n";
@@ -68,7 +80,7 @@ int main(int argc, char** argv)
         }
     }
 
-    Image* image = new Image(size, mbr, fat12bs, espImage);
+    Image* image = new Image(size, mbr, fat12bs, espImage, loader, ebfs);
 
     if (!image->write(output))
     {

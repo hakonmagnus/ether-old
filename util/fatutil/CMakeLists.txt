@@ -9,13 +9,23 @@
 #  (_______/   )_(   |/     \|(_______/|/   \__/                              |
 #=============================================================================|
 
-# Subdirectories
+set(fatutil_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+)
 
-add_subdirectory(partlib)
-add_subdirectory(diskutil)
-add_subdirectory(fatutil)
+set(fatutil_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/fat.hpp
+)
+
+add_executable(fatutil ${fatutil_SOURCES})
+
+# Directories and libraries
+
+target_include_directories(fatutil PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 # Lists
 
-set(ETHER_SOURCE_FILES ${ETHER_SOURCE_FILES} PARENT_SCOPE)
-set(ETHER_INCLUDE_FILES ${ETHER_INCLUDE_FILES} PARENT_SCOPE)
+set(ETHER_SOURCE_FILES ${ETHER_SOURCE_FILES} ${fatutil_SOURCES})
+set(ETHER_INCLUDE_FILES ${ETHER_INCLUDE_FILES} ${fatutil_INCLUDES})

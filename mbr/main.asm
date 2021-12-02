@@ -42,22 +42,79 @@ start:
 
     mov bx, 0x500
     mov ah, 2
-    mov al, 14
+    mov al, 1
     int 0x13
     jc disk_error
+    
+    mov si, 0x500
+    
+    mov word ax, [si]
+    
+    cmp ax, 0x4645
+    jne corrupt_image
 
-    cli
-    hlt
+    mov word ax, [si+0x48]
+    mov word cx, [si+0x50]
+    push cx
+    
+    call lba_to_hts
+    
+    mov bx, 0x500
+    mov ah, 2
+    mov al, 32
+    int 0x13
+    jc disk_error
+    
+    mov si, 0x500
+    pop cx
+    
+.next_entry:
+    mov word ax, [si]
+    
+    cmp ax, 0x6148
+    jne .skip
+    
+    mov word ax, [si+2]
+    
+    cmp ax, 0x2168
+    je .found
+    
+.skip:
+    add si, 0x80
+    loop .next_entry
+    jmp corrupt_image
+
+.found:
+    mov word ax, [si+0x20]
+    call lba_to_hts
+    
+    mov bx, 0x500
+    mov ah, 2
+    mov al, 48
+    int 0x13
+    jc disk_error
+    
+    jmp 0x0:0x500
 
 disk_error:
     mov si, .msg
     call print_string
+    jmp reboot
+    
+    .msg db "Disk error. Press any key to reboot...", 13, 10, 0
+
+corrupt_image:
+    mov si, .msg
+    call print_string
+    jmp reboot
+    
+    .msg db "Corrupt image. Press any key to reboot...", 13, 10, 0
+
+reboot:
     xor ax, ax
     int 0x16
     xor ax, ax
     int 0x19
-
-    .msg db "Disk error. Press any key to reboot...", 13, 10, 0
 
 print_string:
     pusha

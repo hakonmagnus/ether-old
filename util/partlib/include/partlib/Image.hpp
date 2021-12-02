@@ -33,8 +33,13 @@ public:
      * Constructor
      * \param size Size of image in bytes
      * \param mbr MBR filename
+     * \param fat12bs FAT12 boot sector filename
+     * \param espImage ESP partition image
+     * \param loader Loader filename
+     * \param boot Root of boot partition
      */
-    Image(const size_t size, const std::string& mbr, const std::string& fat12bs, const std::string& espImage);
+    Image(const size_t size, const std::string& mbr, const std::string& fat12bs, const std::string& espImage,
+        const std::string& loader, const std::string& boot);
 
     /**
      * Destructor
@@ -73,6 +78,16 @@ private:
      * EFI system partition image path
      */
     std::string m_espImage;
+    
+    /**
+     * Loader filename
+     */
+    std::string m_loader;
+    
+    /**
+     * Boot partition root filename
+     */
+    std::string m_boot;
 };
 
 /**

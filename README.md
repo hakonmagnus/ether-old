@@ -54,6 +54,18 @@ git submodule update --init --recursive
 chmod +x build.sh
 ```
 
+### Dependencies
+
+The following are needed to run the build script:
+
+* CMake
+* G++/GCC
+* NASM
+* xorriso
+* mkfs.vfat
+
+Make sure these dependencies are installed prior to running the build script.
+
 ### Building
 
 To build Ether, run the following:

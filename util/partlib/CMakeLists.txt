@@ -13,6 +13,7 @@ set(partlib_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/CRC32.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/GUID.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/EBFS.cpp
 )
 
 set(partlib_INCLUDES
@@ -20,6 +21,7 @@ set(partlib_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/partlib/GPT.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/partlib/CRC32.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/partlib/GUID.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/partlib/EBFS.hpp
 )
 
 add_library(partlib STATIC ${partlib_SOURCES})
