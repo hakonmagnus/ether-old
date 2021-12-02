@@ -13,5 +13,10 @@ bits 32
 
 section .entry
 entry:
+    mov edi, 0xB8000
+    mov ah, 0x0F
+    mov al, 'A'
+    mov word [edi], ax
+    
     cli
     hlt

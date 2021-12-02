@@ -174,6 +174,7 @@ loader32:
     call ebfs_read_file
     
     mov edi, ELF_IMAGE
+    mov edx, KERNEL_ADDRESS
     jmp elf_execute
 
 ebfs_error:

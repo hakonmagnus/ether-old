@@ -71,6 +71,8 @@ nasm ./mbr/main.asm -o ./build/main.mbr
 nasm ./mbr/fat12.asm -o ./build/fat12.mbr
 nasm ./loader/loader.asm -o ./build/loader.bin
 nasm ./efi/efi.asm -o ./build/boot.efi
+
+echo -e "\e[1;32mBuilding kernel...\e[0m"
 nasm ./ether/ether.asm -o ./build/ether
 
 # Create hard drive image

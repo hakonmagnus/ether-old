@@ -39,6 +39,8 @@ ebfs_read_file:
     mul ebx
     sub eax, 16
     
+    mov dword [.group_data_size_bytes], eax
+    
     xor edx, edx
     mov ebx, 4
     div ebx
@@ -132,12 +134,16 @@ ebfs_read_file:
     
     pop esi
     
-    add dword esi, [.group_data_size]
+    add dword esi, [.group_data_size_bytes]
     
     cmp dword [.next_group_address], 0xFFFFFFFF
     je .done
     
     mov dword eax, [.next_group_address]
+    mov dword ebx, [ebfs_group_size]
+    mul ebx
+    
+    add dword eax, [ebfs_start_lba]
     jmp .next_group
 
 .done:
@@ -155,6 +161,7 @@ ebfs_read_file:
     .filename dd 0
     .next_group_address dd 0
     .group_data_size dd 0
+    .group_data_size_bytes dd 0
     .offset dd 0
 
 ;=============================================================================;

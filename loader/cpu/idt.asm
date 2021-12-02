@@ -66,6 +66,7 @@ idt_initialize:
     idt_entry 29
     idt_entry 30
 
+    sidt [idt_old]
     lidt [idt_end]
     popa
     ret
@@ -76,6 +77,10 @@ idt_start:
 idt_end:
     dw idt_end - idt_start - 1  ; Limit
     dd idt_start                ; Base
+
+idt_old:
+    dw 0
+    dd 0
 
 idt_isr 0, "Division by zero exception."
 idt_isr 1, "Debug exception."
